@@ -28,7 +28,21 @@ const firebaseConfigProd = {
 
 // Initialize Firebase SDK
 console.log('Firebase Config being used:', firebaseConfigProd);
-const app = initializeApp(firebaseConfigProd);
+
+let app: any;
+try {
+  app = initializeApp(firebaseConfigProd);
+  console.log('Firebase app initialized successfully');
+} catch (error: any) {
+  if (error.code === 'app/duplicate-app') {
+    console.log('Firebase app already initialized, getting existing app');
+    app = initializeApp(firebaseConfigProd);
+  } else {
+    console.error('Firebase initialization error:', error);
+    throw error;
+  }
+}
+
 export const db = getFirestore(app, firebaseConfigProd.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
