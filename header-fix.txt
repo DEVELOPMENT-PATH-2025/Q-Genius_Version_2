@@ -1,0 +1,14 @@
+// Add this code to FacultyDashboard.tsx after line 2524 (after the </h4> tag):
+
+                                    {/* Show header for Revised Format MST-I between Q3 and Q4 */}
+                                    {sectionType === 'SHORT_ANSWER' && selectedTemplate?.name.toLowerCase().includes('revised format') && selectedTemplate?.name.toLowerCase().includes('mst - i') && (
+                                      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                        <div className="text-center font-bold text-amber-800">
+                                          Short Answer Type Questions (Attempt any two)
+                                        </div>
+                                      </div>
+                                    )}
+
+// This will add the "Short Answer Type Questions (Attempt any two)" header
+// between Q3 and Q4 in the SHORT_ANSWER section
+// when the template is "Revised Format MST-I"

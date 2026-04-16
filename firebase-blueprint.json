@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user" },
+        "email": { "type": "string", "format": "email", "description": "User's email address" },
+        "displayName": { "type": "string", "description": "User's display name" },
+        "photoURL": { "type": "string", "description": "URL to user's profile photo" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "ADMIN", "FACULTY"], "description": "User's role in the application" },
+        "department": { "type": "string", "description": "User's academic department" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the user profile was created" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "A single question in the database",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string", "description": "The text of the question" },
+        "subject": { "type": "string" },
+        "topic": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "type": { "type": "string", "enum": ["mcq", "short", "long"] },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswer": { "type": "string" },
+        "marks": { "type": "number" },
+        "department": { "type": "string", "description": "Academic department this question belongs to" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["text", "subject", "difficulty", "type", "authorId"]
+    },
+    "QuestionPaper": {
+      "title": "Question Paper",
+      "description": "A generated question paper",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "totalMarks": { "type": "number" },
+        "timeLimit": { "type": "number", "description": "Time limit in minutes" },
+        "questions": { "type": "array", "items": { "type": "string" }, "description": "List of question IDs" },
+        "department": { "type": "string", "description": "Academic department this paper belongs to" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "instructions": { "type": "string" },
+        "format": { "type": "string" },
+        "templateId": { "type": "string" }
+      },
+      "required": ["title", "subject", "questions", "authorId"]
+    },
+    "PaperTemplate": {
+      "title": "Paper Template",
+      "description": "A university question paper format template",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "authorId": { "type": "string", "description": "The user who uploaded this template" }
+      },
+      "required": ["name", "fileUrl", "authorId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Global question bank"
+    },
+    "/questionPapers/{paperId}": {
+      "schema": "QuestionPaper",
+      "description": "Generated question papers"
+    },
+    "/templates/{templateId}": {
+      "schema": "PaperTemplate",
+      "description": "User-specific question paper templates"
+    }
+  }
+}

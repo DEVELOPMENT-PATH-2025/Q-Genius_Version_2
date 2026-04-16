@@ -1,0 +1,183 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required, immutable) - User's unique ID
+    //   - email: string (required, immutable) - User's email address
+    //   - displayName: string (optional) - User's display name
+    //   - photoURL: string (optional) - URL to user's profile photo
+    //   - role: string (required) - 'SUPER_ADMIN', 'ADMIN', or 'FACULTY'
+    //   - department: string (optional) - User's academic department
+    //   - createdAt: timestamp (required, immutable) - Creation time
+    //
+    // Collection: questions
+    // Document ID: {questionId}
+    // Fields:
+    //   - text: string (required) - Question text
+    //   - subject: string (required) - Subject name
+    //   - topic: string (optional) - Topic name
+    //   - difficulty: string (required) - 'easy', 'medium', 'hard'
+    //   - type: string (required) - 'mcq', 'short', 'long'
+    //   - options: list (optional) - List of options for MCQ
+    //   - correctAnswer: string (optional) - Correct answer
+    //   - marks: number (required) - Marks for the question
+    //   - department: string (optional) - Academic department
+    //   - authorId: string (required, immutable) - UID of the creator
+    //   - createdAt: timestamp (required, immutable) - Creation time
+    //
+    // Collection: questionPapers
+    // Document ID: {paperId}
+    // Fields:
+    //   - title: string (required) - Paper title
+    //   - subjectName: string (optional) - Subject name
+    //   - totalMarks: number (required) - Total marks
+    //   - questions: list (required) - List of question objects
+    //   - department: string (optional) - Academic department
+    //   - facultyId: string (required, immutable) - UID of the creator
+    //   - createdAt: timestamp (required, immutable) - Creation time
+    //   - status: string (required) - 'DRAFT', 'PENDING_APPROVAL', etc.
+    //   - instructions: string (optional) - General instructions
+    //   - format: string (optional) - Paper format
+    //   - templateId: string (optional) - ID of the applied template
+    //
+    // Collection: templates
+    // Document ID: {templateId}
+    // Fields:
+    //   - id: string (required) - Template ID
+    //   - name: string (required) - Template name
+    //   - fileUrl: string (required) - URL or base64 of the template
+    //   - uploadedAt: timestamp (required) - Upload time
+    //   - authorId: string (required, immutable) - UID of the creator
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          request.auth.token.email in ["amritanshutiwari3005@gmail.com", "amritanshutiwari657@gmail.com", "amritanshutiwari123@gmail.com", "admin@qgenius.edu", "faculty@qgenius.edu"] ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['ADMIN', 'SUPER_ADMIN'])
+        );
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidTemplate(data) {
+      return hasRequiredFields(['id', 'name', 'fileUrl', 'uploadedAt', 'authorId']) &&
+             data.id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.fileUrl is string && data.fileUrl.size() > 0 &&
+             data.uploadedAt is timestamp &&
+             data.authorId == request.auth.uid;
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'department', 'createdAt', 'firstName', 'lastName']) &&
+             data.uid == request.auth.uid &&
+             data.email == request.auth.token.email &&
+             isValidEmail(data.email) &&
+             data.role in ['SUPER_ADMIN', 'ADMIN', 'FACULTY'] &&
+             (!('department' in data) || data.department == null || (data.department is string && data.department.size() < 100)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidQuestion(data) {
+      return hasRequiredFields(['text', 'subject', 'difficulty', 'type', 'marks', 'authorId', 'createdAt']) &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 2000 &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() < 100 &&
+             data.difficulty in ['easy', 'medium', 'hard'] &&
+             data.type in ['mcq', 'short', 'long'] &&
+             data.marks is number && data.marks > 0 &&
+             (!('department' in data) || data.department == null || (data.department is string && data.department.size() < 100)) &&
+             data.authorId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidQuestionPaper(data, isUpdate) {
+      let requiredFields = ['id', 'title', 'courseCode', 'facultyId', 'facultyName', 'createdAt', 'status', 'questions', 'totalMarks', 'durationMinutes'];
+      
+      return hasRequiredFields(requiredFields) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             data.status in ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'] &&
+             data.totalMarks is number && data.totalMarks >= 0 &&
+             data.questions is list && data.questions.size() < 100 &&
+             (isUpdate ? (data.facultyId == resource.data.facultyId || isAdmin()) : data.facultyId == request.auth.uid) &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin()) && isValidUser(request.resource.data);
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    match /questions/{questionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidQuestion(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin()) && isValidQuestion(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /questionPapers/{paperId} {
+      allow get: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.facultyId);
+      allow create: if isAuthenticated() && isValidQuestionPaper(request.resource.data, false);
+      allow update: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin()) && isValidQuestionPaper(request.resource.data, true);
+      allow delete: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin());
+    }
+
+    match /templates/{templateId} {
+      allow get: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.authorId);
+      allow create: if isAuthenticated() && isValidTemplate(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin()) && isValidTemplate(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

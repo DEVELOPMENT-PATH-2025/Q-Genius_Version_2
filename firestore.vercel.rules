@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && resource.data.role in ['admin', 'super_admin'];
+    }
+    
+    // Question papers - faculty can create and manage their own
+    match /questionPapers/{paperId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.facultyId == request.auth.uid || 
+         request.auth.token.role in ['admin', 'super_admin']);
+      allow create: if request.auth != null && 
+        (request.auth.token.role in ['faculty', 'admin', 'super_admin']);
+      allow read: if request.auth != null && 
+        request.auth.token.role in ['faculty', 'admin', 'super_admin'];
+    }
+    
+    // Templates - admins can manage
+    match /templates/{templateId} {
+      allow read, write: if request.auth != null && 
+        request.auth.token.role in ['admin', 'super_admin'];
+    }
+    
+    // Admins can read all users in their department
+    match /users/{userId} {
+      allow read: if request.auth != null && 
+        request.auth.token.role in ['admin', 'super_admin'] &&
+        (request.auth.token.department == resource.data.department || 
+         request.auth.token.role == 'super_admin');
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
