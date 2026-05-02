@@ -95,6 +95,7 @@ export interface PaperTemplate {
   fileUrl: string; // Mock URL or base64
   uploadedAt: string;
   facultyId: string; // To support account-specific templates
+  college?: string; // To support college-based filtering
 }
 
 export interface DashboardStats {

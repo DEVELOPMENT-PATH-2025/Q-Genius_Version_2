@@ -333,21 +333,21 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
       if (!userId) return;
       let unsubscribe: () => void;
       if (currentView === 'my_papers') {
-          unsubscribe = subscribeToPapersForFaculty(userId, (papers) => {
+          unsubscribe = subscribeToPapersForFaculty(userId, college, (papers) => {
               setMyPapers(papers);
               setHistoryLoading(false);
           });
       } else if (currentView === 'templates' || currentView === 'dashboard') {
           loadTemplates();
       } else if (currentView === 'submit_paper') {
-          unsubscribe = subscribeToPapersForFaculty(userId, (papers) => {
+          unsubscribe = subscribeToPapersForFaculty(userId, college, (papers) => {
               setSubmittedPapers(papers);
           });
       }
       return () => {
           if (unsubscribe) unsubscribe();
       };
-  }, [currentView, userId]);
+  }, [currentView, userId, college]);
 
   // Safety check: Hide loading screen if questions exist but loading is still true
   useEffect(() => {
@@ -442,7 +442,7 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
 
   const loadTemplates = async () => {
       setTemplateLoading(true);
-      const data = await getTemplates(userId);
+      const data = await getTemplates(userId, college);
       setTemplates(data);
       setTemplateLoading(false);
   };
@@ -1349,7 +1349,8 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
               name: file.name.replace('.pdf', ''),
               fileUrl: base64,
               uploadedAt: new Date().toISOString(),
-              facultyId: userId
+              facultyId: userId,
+              college: college
             };
             await saveTemplate(newTemplate);
             loadTemplates();

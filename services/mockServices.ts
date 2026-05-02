@@ -247,13 +247,22 @@ export const updatePaperStatus = async (id: string, status: PaperStatus, feedbac
     }
 };
 
-export const subscribeToPapersForAdmin = (department: string | undefined, callback: (papers: QuestionPaper[]) => void) => {
+export const subscribeToPapersForAdmin = (department: string | undefined, college: string | undefined, callback: (papers: QuestionPaper[]) => void) => {
     try {
         const papersRef = collection(db, 'questionPapers');
-        let q = query(papersRef);
-        if (department) {
-            q = query(papersRef, where('department', '==', department));
+        const constraints = [];
+        
+        // Add college filter for complete data isolation
+        if (college) {
+            constraints.push(where('instituteName', '==', college));
         }
+        
+        // Add department filter if specified
+        if (department) {
+            constraints.push(where('department', '==', department));
+        }
+        
+        const q = constraints.length > 0 ? query(papersRef, ...constraints) : query(papersRef);
         
         return onSnapshot(q, (snapshot) => {
             const papers = snapshot.docs.map(doc => {
@@ -274,10 +283,17 @@ export const subscribeToPapersForAdmin = (department: string | undefined, callba
     }
 };
 
-export const subscribeToPapersForFaculty = (facultyId: string, callback: (papers: QuestionPaper[]) => void) => {
+export const subscribeToPapersForFaculty = (facultyId: string, college: string | undefined, callback: (papers: QuestionPaper[]) => void) => {
     try {
         const papersRef = collection(db, 'questionPapers');
-        const q = query(papersRef, where('facultyId', '==', facultyId));
+        const constraints = [where('facultyId', '==', facultyId)];
+        
+        // Add college filter for complete data isolation
+        if (college) {
+            constraints.push(where('instituteName', '==', college));
+        }
+        
+        const q = query(papersRef, ...constraints);
         
         return onSnapshot(q, (snapshot) => {
             const papers = snapshot.docs.map(doc => {
@@ -309,13 +325,23 @@ export const deletePaper = async (id: string): Promise<void> => {
 
 // --- User Operations ---
 
-export const subscribeToUsers = (department: string | undefined, callback: (users: User[]) => void) => {
+export const subscribeToUsers = (department: string | undefined, college: string | undefined, callback: (users: User[]) => void) => {
     try {
         const usersRef = collection(db, 'users');
-        let q = query(usersRef);
-        if (department) {
-            q = query(usersRef, where('department', '==', department));
+        const constraints = [];
+        
+        // Add college filter for complete data isolation
+        if (college) {
+            constraints.push(where('college', '==', college));
         }
+        
+        // Add department filter if specified
+        if (department) {
+            constraints.push(where('department', '==', department));
+        }
+        
+        const q = constraints.length > 0 ? query(usersRef, ...constraints) : query(usersRef);
+        
         return onSnapshot(q, (snapshot) => {
             const users = snapshot.docs.map(doc => {
                 const data = doc.data() as Omit<User, 'uid'>;
@@ -376,22 +402,29 @@ export const saveTemplate = async (template: PaperTemplate): Promise<void> => {
             name: template.name,
             fileUrl: template.fileUrl,
             uploadedAt: Timestamp.fromDate(new Date(template.uploadedAt)),
-            authorId: template.facultyId
+            authorId: template.facultyId,
+            college: template.college
         }));
     } catch (error) {
         handleFirestoreError(error, OperationType.WRITE, `templates/${template.id}`);
     }
 };
 
-export const getTemplates = async (facultyId?: string): Promise<PaperTemplate[]> => {
+export const getTemplates = async (facultyId?: string, college?: string): Promise<PaperTemplate[]> => {
     try {
         const templatesRef = collection(db, "templates");
-        let q;
+        const constraints = [];
+        
         if (facultyId) {
-            q = query(templatesRef, where("authorId", "==", facultyId));
-        } else {
-            q = query(templatesRef);
+            constraints.push(where("authorId", "==", facultyId));
         }
+        
+        // Add college filter for complete data isolation
+        if (college) {
+            constraints.push(where("college", "==", college));
+        }
+        
+        const q = constraints.length > 0 ? query(templatesRef, ...constraints) : query(templatesRef);
         
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => {

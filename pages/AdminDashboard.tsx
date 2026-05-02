@@ -27,7 +27,7 @@ import { QuestionPaper, PaperStatus, ViewType, QuestionType, UserRole, User } fr
 import { useAuth } from '../src/AuthContext';
 
 const AdminDashboard: React.FC<{ currentView?: ViewType }> = ({ currentView }) => {
-  const { role, department: adminDept } = useAuth();
+  const { role, department: adminDept, college } = useAuth();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedPaper, setSelectedPaper] = useState<QuestionPaper | null>(null);
@@ -40,12 +40,12 @@ const AdminDashboard: React.FC<{ currentView?: ViewType }> = ({ currentView }) =
   useEffect(() => {
     let unsubscribe: () => void;
     if (currentView === 'review_queue') {
-      unsubscribe = subscribeToPapersForAdmin(role === UserRole.SUPER_ADMIN ? undefined : adminDept || undefined, (papers) => {
+      unsubscribe = subscribeToPapersForAdmin(role === UserRole.SUPER_ADMIN ? undefined : adminDept || undefined, college, (papers) => {
         setPapers(papers);
         setLoading(false);
       });
     } else if (currentView === 'users') {
-      unsubscribe = subscribeToUsers(role === UserRole.SUPER_ADMIN ? undefined : adminDept || undefined, (users) => {
+      unsubscribe = subscribeToUsers(role === UserRole.SUPER_ADMIN ? undefined : adminDept || undefined, college, (users) => {
         setUsers(users);
         setLoading(false);
       });
@@ -53,7 +53,7 @@ const AdminDashboard: React.FC<{ currentView?: ViewType }> = ({ currentView }) =
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [role, adminDept, currentView]);
+  }, [role, adminDept, college, currentView]);
 
   useEffect(() => {
     // Reset selected paper when navigating via sidebar
