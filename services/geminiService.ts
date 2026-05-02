@@ -63,9 +63,9 @@ export const getAIInstance = (): GoogleGenAI => {
     return null as any;
   }
   
-  // Validate API key format
-  if (!manualKey.startsWith('AQ.') || manualKey.length < 53) {
-    console.log("Invalid API key format or length");
+  // Validate API key length
+  if (manualKey.length !== 39) {
+    console.log("Invalid API key length");
     return null as any;
   }
   
@@ -154,13 +154,13 @@ export const extractTextFromExcel = async (file: File): Promise<string> => {
 
 export const isAIAvailable = (): boolean => {
   const manualKey = typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_API_KEY') : null;
-  console.log('🔑 API Key Check:', {
+  console.log('?? API Key Check:', {
     hasKey: !!manualKey,
     keyLength: manualKey?.length,
-    startsWithAQ: manualKey?.startsWith('AQ.'),
+    hasValidLength: manualKey?.length === 39,
     keyPreview: manualKey ? `${manualKey.substring(0, 10)}...` : 'none'
   });
-  return !!(manualKey && manualKey.startsWith('AQ.') && manualKey.length >= 53);
+  return !!(manualKey && manualKey.length === 39);
 };
 
 // Reset API call counter for debugging
@@ -771,7 +771,7 @@ export const analyzePaperTemplate = async (
   logApiCall('analyzePaperTemplate', { mimeType });
   
   const manualKey = typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_API_KEY') : null;
-  const apiKey = manualKey || process.env.API_KEY || process.env.GEMINI_API_KEY || "AQ.Ab8RN6IopwqztPj8VUE7XEgHc6Y1QvgnYYLa0sv0HkiHqHxYYg";
+  const apiKey = manualKey || process.env.API_KEY || process.env.GEMINI_API_KEY || "ALZaAb8RN6IopwqztPj8VUE7XEgHc6Y1QvgnYYLa0sv0HkiHqHxYYg";
 
   if (!apiKey) return { mcqCount: 10, shortCount: 5, longCount: 3 };
   
@@ -863,10 +863,10 @@ export const extractQuestionsFromFile = async (
     throw new Error("Please add your Gemini API key in Settings to continue using AI features.");
   }
 
-  // Validate API key format before proceeding
-  if (!userApiKey.startsWith('AQ.') || userApiKey.length < 30) {
-    console.error("Invalid API key format or length");
-    throw new Error("Invalid API key format. Please check your Gemini API key configuration.");
+  // Validate API key length before proceeding
+  if (userApiKey.length !== 39) {
+    console.error("Invalid API key length");
+    throw new Error("Invalid API key length. API key must be exactly 39 characters.");
   }
 
   console.log("Starting PDF extraction with valid API key");

@@ -127,7 +127,7 @@ const Landing: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
             <Sparkles className="w-5 h-5 text-slate-900" />
             <span className="font-bold">Q-Genius</span>
           </div>
-          <p className="text-sm text-slate-400">© 2024 Q-Genius. Sustainable AI for inclusive learning.</p>
+          <p className="text-sm text-slate-400">© 2026 Q-Genius. Sustainable AI for inclusive learning.</p>
           <div className="flex gap-6">
             <a href="#" className="text-sm text-slate-400 hover:text-slate-900 transition-colors">Privacy</a>
             <a href="#" className="text-sm text-slate-400 hover:text-slate-900 transition-colors">Terms</a>

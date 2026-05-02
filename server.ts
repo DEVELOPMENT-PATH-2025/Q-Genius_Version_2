@@ -9,19 +9,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
+  try {
+    console.log('🚀 Starting Q-Genius server...');
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔧 PORT: ${process.env.PORT || '3000 (default)'}`);
+    
+    const app = express();
 
-  app.use(express.json());
+    app.use(express.json());
 
-  const httpServer = createServer(app);
-  const io = new Server(httpServer, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
-    }
-  });
+    const httpServer = createServer(app);
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
+    });
 
-  const PORT = 3000;
+    const PORT = Number(process.env.PORT) || 3000;
 
   // Mock real-time stats generator
   let stats = {
@@ -213,8 +218,14 @@ Amritanshu Tiwari`;
   }
 
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`✅ Server successfully started on port ${PORT}`);
+    console.log(`🌐 Server running on http://localhost:${PORT}`);
+    console.log(`🏥 Health check available at http://localhost:${PORT}/api/health`);
   });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
 }
 
 startServer();

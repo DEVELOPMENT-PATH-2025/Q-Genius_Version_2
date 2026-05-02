@@ -476,15 +476,9 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
 
   const handleSaveApiKey = () => {
     if (customApiKey) {
-      // Validate API key format (Gemini keys start with "AQ.")
-      if (!customApiKey.trim().startsWith('AQ.')) {
-        setError('Invalid API key format. Gemini API keys should start with "AQ."');
-        return;
-      }
-      
-      // Validate API key length (should be around 53 characters)
-      if (customApiKey.trim().length < 53) {
-        setError('API key appears to be too short. Please check your Gemini API key.');
+      // Validate API key length (should be exactly 39 characters)
+      if (customApiKey.trim().length !== 39) {
+        setError('API key must be exactly 39 characters long.');
         return;
       }
       
@@ -518,11 +512,11 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
         console.log('Post-save verification:', {
           storedKey: testKey ? `${testKey.substring(0, 10)}...` : 'none',
           isAvailable,
-          hasValidFormat: testKey?.startsWith('AQ.'),
+          hasValidFormat: testKey?.length === 39,
           keyLength: testKey?.length
         });
         
-        if (isAvailable && testKey && testKey.startsWith('AQ.') && testKey.length >= 53) {
+        if (isAvailable && testKey && testKey.length === 39) {
           console.log('API key verification successful - AI service is ready');
           
           // Test the API key with a simple call to ensure it works
@@ -2146,13 +2140,13 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
                         <label className="text-sm font-bold text-slate-700">Custom API Key</label>
                         <div className="flex items-center gap-2">
                           <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                            customApiKey && customApiKey.startsWith('AQ.') && customApiKey.length >= 53 
+                            customApiKey && customApiKey.length === 39 
                               ? 'bg-green-100 text-green-700 border-green-200' 
                               : customApiKey 
                                 ? 'bg-amber-100 text-amber-700 border-amber-200' 
                                 : 'bg-slate-100 text-slate-500 border-slate-200'
                           }`}>
-                            {customApiKey && customApiKey.startsWith('AQ.') && customApiKey.length >= 53 ? 'Valid' : 
+                            {customApiKey && customApiKey.length === 39 ? 'Valid' : 
                              customApiKey ? 'Invalid' : 'Not Set'}
                           </div>
                         </div>
@@ -2185,13 +2179,13 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
                         <div className="flex items-center justify-between text-xs text-slate-600">
                           <span>Key Format</span>
                           <span className="font-mono">
-                            {customApiKey ? (customApiKey.startsWith('AQ.') ? 'Valid' : 'Invalid') : 'N/A'}
+                            {customApiKey ? (customApiKey.length === 39 ? 'Valid' : 'Invalid') : 'N/A'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs text-slate-600">
                           <span>Key Length</span>
                           <span className="font-mono">
-                            {customApiKey ? `${customApiKey.length}/53` : '0/53'}
+                            {customApiKey ? `${customApiKey.length}/39` : '0/39'}
                           </span>
                         </div>
                       </div>
@@ -2306,8 +2300,8 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
                           console.log(`   API Key: ${apiKey ? '✅ Present' : '❌ Missing'}`);
                           
                           if (apiKey) {
-                            console.log(`   Key Format: ${apiKey.startsWith('AQ.') ? 'Valid' : 'Invalid'}`);
-                            console.log(`   Key Length: ${apiKey.length >= 53 ? 'Valid' : 'Too Short'}`);
+                            console.log(`   Key Format: ${apiKey.length === 39 ? 'Valid' : 'Invalid'}`);
+                            console.log(`   Key Length: ${apiKey.length === 39 ? 'Valid' : 'Too Short'}`);
                           }
                           
                           // Check Template
