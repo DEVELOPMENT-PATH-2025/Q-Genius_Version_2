@@ -178,7 +178,7 @@ interface FacultyDashboardProps {
 }
 
 const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, currentView, onNavigate }) => {
-  const { department } = useAuth();
+  const { department, college } = useAuth();
   const [selectedDepartment, setSelectedDepartment] = useState(department || '');
   const [activeTab, setActiveTab] = useState<'prompt' | 'upload' | 'curriculum' | 'settings'>('prompt');
   const [prompt, setPrompt] = useState('');
@@ -189,7 +189,7 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
   const [error, setError] = useState<string | null>(null);
   const [paperTitle, setPaperTitle] = useState('');
   const [examName, setExamName] = useState('');
-  const [instituteName, setInstituteName] = useState('Sagar Institute of Science and Technology');
+  const [instituteName, setInstituteName] = useState(college || 'Sagar Institute of Science and Technology');
   const [subjectName, setSubjectName] = useState('');
   const [subjectCode, setSubjectCode] = useState('');
   const [examDate, setExamDate] = useState('');

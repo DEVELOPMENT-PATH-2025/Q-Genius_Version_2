@@ -11,6 +11,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   department?: string;
+  college?: string;
 }
 
 export enum QuestionType {

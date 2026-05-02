@@ -34,6 +34,7 @@ const Auth: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('');
+  const [college, setCollege] = useState('');
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +129,7 @@ const Auth: React.FC = () => {
             displayName: displayName,
             role: role, // Store the full UserRole enum value (e.g., 'FACULTY', 'ADMIN', 'SUPER_ADMIN')
             department: department,
+            college: college,
             createdAt: serverTimestamp(),
           }));
       }
@@ -414,6 +416,23 @@ const Auth: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {!isLogin && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-slate-700">College/Institute Name</label>
+                <div className="relative">
+                  <School className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input 
+                    type="text" 
+                    required
+                    value={college}
+                    onChange={e => setCollege(e.target.value)}
+                    className="input-field pl-11"
+                    placeholder="Enter your college or institute name"
+                  />
+                </div>
+              </div>
+            )}
 
             {!isLogin && (
               <div className="space-y-1.5">

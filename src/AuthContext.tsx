@@ -8,8 +8,9 @@ interface AuthContextType {
   loading: boolean;
   role: UserRole | null;
   department: string | null;
+  college: string | null;
   error: string | null;
-  loginAsMockUser: (role: UserRole, department?: string) => void;
+  loginAsMockUser: (role: UserRole, department?: string, college?: string) => void;
   logout: () => Promise<void>;
 }
 
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   role: null,
   department: null,
+  college: null,
   error: null,
   loginAsMockUser: () => {},
   logout: async () => {},
@@ -30,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<UserRole | null>(null);
   const [department, setDepartment] = useState<string | null>(null);
+  const [college, setCollege] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const logout = async () => {
@@ -39,12 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setRole(null);
       setDepartment(null);
+      setCollege(null);
     } catch (err) {
       console.error("Logout error:", err);
     }
   };
 
-  const loginAsMockUser = (selectedRole: UserRole, selectedDept: string = "Computer Science") => {
+  const loginAsMockUser = (selectedRole: UserRole, selectedDept: string = "Computer Science", selectedCollege: string = "Demo University") => {
     const mockUser = {
       uid: 'mock-user-' + Math.random().toString(36).substr(2, 9),
       email: 'demo@qgenius.edu',
@@ -52,13 +56,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       photoURL: 'https://i.pravatar.cc/150?u=demo',
       isMock: true,
       role: selectedRole,
-      department: selectedDept
+      department: selectedDept,
+      college: selectedCollege
     };
     
     localStorage.setItem('qgenius_mock_user', JSON.stringify(mockUser));
     setUser(mockUser as any);
     setRole(selectedRole);
     setDepartment(selectedDept);
+    setCollege(selectedCollege);
     setLoading(false);
   };
 
@@ -71,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(parsed);
         setRole(parsed.role);
         setDepartment(parsed.department);
+        setCollege(parsed.college || null);
         setLoading(false);
       } catch (e) {
         localStorage.removeItem('qgenius_mock_user');
@@ -101,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const data = userDoc.data();
             setRole(data.role as UserRole);
             setDepartment(data.department || null);
+            setCollege(data.college || null);
           } else {
             // Create new user profile
             const defaultRole = firebaseUser.email === "amritanshutiwari3005@gmail.com" ? UserRole.SUPER_ADMIN : UserRole.FACULTY;
@@ -111,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               photoURL: firebaseUser.photoURL,
               role: defaultRole,
               department: null, // Initialize department field
+              college: null, // Initialize college field
               createdAt: serverTimestamp(),
             };
             try {
@@ -136,6 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             setRole(defaultRole);
             setDepartment(null);
+            setCollege(null);
           }
         } catch (err: any) {
           console.error("Error fetching user profile:", err);
@@ -145,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setRole(null);
         setDepartment(null);
+        setCollege(null);
       }
       setLoading(false);
     });
@@ -153,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, department, error, logout, loginAsMockUser }}>
+    <AuthContext.Provider value={{ user, loading, role, department, college, error, logout, loginAsMockUser }}>
       {children}
     </AuthContext.Provider>
   );
