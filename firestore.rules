@@ -105,12 +105,13 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'department', 'createdAt', 'firstName', 'lastName']) &&
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'department', 'college', 'createdAt', 'firstName', 'lastName']) &&
              data.uid == request.auth.uid &&
              data.email == request.auth.token.email &&
              isValidEmail(data.email) &&
              data.role in ['SUPER_ADMIN', 'ADMIN', 'FACULTY'] &&
              (!('department' in data) || data.department == null || (data.department is string && data.department.size() < 100)) &&
+             (!('college' in data) || data.college == null || (data.college is string && data.college.size() < 200)) &&
              data.createdAt is timestamp;
     }
 
@@ -144,6 +145,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAuthenticated() && isAdmin(); // Only admins can list all users
       allow create: if isAuthenticated() && isValidUser(request.resource.data);
       allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin()) && isValidUser(request.resource.data);
       allow delete: if isAuthenticated() && isAdmin();
@@ -158,7 +160,7 @@ service cloud.firestore {
 
     match /questionPapers/{paperId} {
       allow get: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin());
-      allow list: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.facultyId);
+      allow list: if isAuthenticated(); // Allow authenticated users to list questionPapers for filtering
       allow create: if isAuthenticated() && isValidQuestionPaper(request.resource.data, false);
       allow update: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin()) && isValidQuestionPaper(request.resource.data, true);
       allow delete: if isAuthenticated() && (resource.data.facultyId == request.auth.uid || isAdmin());
@@ -166,7 +168,7 @@ service cloud.firestore {
 
     match /templates/{templateId} {
       allow get: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
-      allow list: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.authorId);
+      allow list: if isAuthenticated(); // Allow authenticated users to list templates for filtering
       allow create: if isAuthenticated() && isValidTemplate(request.resource.data);
       allow update: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin()) && isValidTemplate(request.resource.data);
       allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());

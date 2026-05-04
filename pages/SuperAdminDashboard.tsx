@@ -88,7 +88,7 @@ const SuperAdminDashboard: React.FC<{ currentView: ViewType }> = ({ currentView 
     return semesterPapers;
   };
 
-  const { department } = useAuth();
+  const { department, college } = useAuth();
 
   // Load all papers for semester statistics (real-time)
   useEffect(() => {
@@ -117,12 +117,13 @@ const SuperAdminDashboard: React.FC<{ currentView: ViewType }> = ({ currentView 
             unsubscribe();
         };
     } else if (currentView === 'users') {
-        const unsubscribe = subscribeToUsers(filterDept, (users) => {
+        const filterCollege = college ? college : undefined;
+        const unsubscribe = subscribeToUsers(filterDept, filterCollege, (users) => {
             setUsers(users);
         });
         return () => unsubscribe();
     }
-  }, [currentView, department]);
+  }, [currentView, department, college]);
 
 
   const handleAddUser = async (e: React.FormEvent) => {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, googleProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, FirebaseUser, auth, db, doc, getDoc, setDoc, serverTimestamp } from './firebase';
+import { onAuthStateChanged, signInWithPopup, signOut, googleProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, FirebaseUser, auth, db, doc, getDoc, setDoc, serverTimestamp, Timestamp, FieldValue } from './firebase';
 import { UserRole } from '../types';
 import { sanitizeForFirestore } from '../services/mockServices';
 
@@ -110,42 +110,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setDepartment(data.department || null);
             setCollege(data.college || null);
           } else {
-            // Create new user profile
-            const defaultRole = firebaseUser.email === "amritanshutiwari3005@gmail.com" ? UserRole.SUPER_ADMIN : UserRole.FACULTY;
-            const userData: any = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-              role: defaultRole,
-              department: null, // Initialize department field
-              college: null, // Initialize college field
-              createdAt: serverTimestamp(),
-            };
-            try {
-              await setDoc(userDocRef, sanitizeForFirestore(userData));
-              
-              // Send welcome email (fire and forget, don't block UI)
-              setTimeout(() => {
-                fetch('/api/send-welcome-email', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    email: firebaseUser.email,
-                    firstName: firebaseUser.displayName?.split(' ')[0] || 'User'
-                  })
-                }).catch(err => console.error("Error triggering welcome email:", err));
-              }, 0);
-              
-            } catch (err: any) {
-              console.error("Error creating user profile:", err);
-              setError("Failed to create your profile. Please try again.");
+            // Only create user profile if this is a Google login (email/password registration already creates profile)
+            // Check if user has displayName and email from Google auth
+            if (firebaseUser.displayName && firebaseUser.email && firebaseUser.providerData.some(p => p.providerId === 'google.com')) {
+              const defaultRole = firebaseUser.email === "amritanshutiwari3005@gmail.com" ? UserRole.SUPER_ADMIN : UserRole.FACULTY;
+              const userData: any = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                role: defaultRole,
+                department: null, // Initialize department field
+                college: null, // Initialize college field
+                createdAt: serverTimestamp(),
+              };
+              try {
+                await setDoc(userDocRef, sanitizeForFirestore(userData));
+                
+                // Send welcome email (fire and forget, don't block UI)
+                setTimeout(() => {
+                  fetch('/api/send-welcome-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: firebaseUser.email,
+                      firstName: firebaseUser.displayName?.split(' ')[0] || 'User'
+                    })
+                  }).catch(err => console.error("Error triggering welcome email:", err));
+                }, 0);
+                
+                setRole(defaultRole);
+                setDepartment(null);
+                setCollege(null);
+              } catch (err: any) {
+                console.error("Error creating user profile:", err);
+                setError("Failed to create your profile. Please try again.");
+                setLoading(false);
+                return;
+              }
+            } else {
+              // For email/password users, the profile should have been created during registration
+              // If it doesn't exist, there might be an issue
+              console.error("User profile not found for email/password user");
+              setError("User profile not found. Please try registering again.");
               setLoading(false);
               return;
             }
-            setRole(defaultRole);
-            setDepartment(null);
-            setCollege(null);
           }
         } catch (err: any) {
           console.error("Error fetching user profile:", err);
