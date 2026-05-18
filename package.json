@@ -7,8 +7,9 @@
     "dev": "tsx server.ts",
     "build": "vite build",
     "start": "tsx server.ts",
-    "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "preview": "npm run build && wrangler dev",
+    "lint": "tsc --noEmit",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@google/genai": "^1.33.0",
@@ -37,11 +38,13 @@
     "vercel": "^51.8.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.37.1",
     "@types/express": "^5.0.6",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wrangler": "^4.92.0"
   }
 }
