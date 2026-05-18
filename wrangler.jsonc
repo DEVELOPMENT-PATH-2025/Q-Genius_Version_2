@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "q-genius",
+  "name": "qgenius",
   "compatibility_date": "2026-05-18",
   "observability": {
     "enabled": true
