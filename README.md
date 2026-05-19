@@ -4,23 +4,32 @@
 
 **👨‍🏫 Faculty Module**
 **AI Question Synthesis:** Generate curriculum-aligned questions using Google Gemini 1.5 Flash.
+
 **Legacy Paper OCR:** Convert scanned old papers into editable text via Tesseract.js.
+
 **Syllabus Analyzer:** Extract key learning outcomes from uploaded curriculum PDFs.
+
 Automated Template Injection: Programmatically map questions onto official college PDF formats using PDF-lib.
 
 **🛡️ Admin Module**
 **Digital Approval Queue:** Real-time review of pending submissions.
+
 **Feedback Loop:** Reject papers with specific corrective comments sent via automated notifications.
+
 **One-Click Approval:** Finalize papers and trigger secure document generation.
 
 **📊 Super Admin Module**
 **Institutional Analytics:** Visualize difficulty distribution and faculty productivity using Recharts.
+
 **Role Management:** Manage user permissions and institutional audit logs.
+
 **System Oversight:** Monitor the entire assessment lifecycle across all departments.
 
 **🛠️ Technical Stack**
 Category	Technology
+
 Frontend	Next.js 14 (App Router), Tailwind CSS, Shadcn UI, Recharts
+
 Backend	Next.js Serverless Functions
 Authentication	Firebase Auth (RBAC with Custom Claims)
 Database	Firebase Firestore (Real-time NoSQL)
