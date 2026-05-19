@@ -31,8 +31,11 @@ Category	Technology
 Frontend	Next.js 14 (App Router), Tailwind CSS, Shadcn UI, Recharts
 
 Backend	Next.js Serverless Functions
+
 Authentication	Firebase Auth (RBAC with Custom Claims)
+
 Database	Firebase Firestore (Real-time NoSQL)
+
 Storage	Firebase Cloud Storage
 AI/ML	Google Gemini 1.5 Flash API, Tesseract.js (OCR)
 Document Logic	PDF-lib (Byte-stream PDF Manipulation)
