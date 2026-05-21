@@ -62,13 +62,16 @@ git clone https://github.com/your-username/q-genius.git
 cd q-genius
 Install dependencies:
 code
+
 Bash
 npm install
 Configure Environment Variables:
 Create a .env.local file in the root directory and add your credentials:
+
 code
 Env
 Run the development server:
+
 code
 Bash
 npm run dev
@@ -76,7 +79,11 @@ Open http://localhost:3000 to view the app.
 
 **📈 Impact Analysis**
 Compared to traditional legacy methods, Q-Genius delivers:
+
 97% Reduction in total preparation time.
+
 ₹0.00 Operational Cost using serverless free tiers.
+
 100% Elimination of manual formatting errors.
+
 Zero Paper Waste during the drafting and approval cycles.
