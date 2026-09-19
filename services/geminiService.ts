@@ -3,7 +3,7 @@ import { Question, QuestionType, Difficulty } from "../types";
 import { questionMemory } from './questionMemory';
 import * as pdfjs from 'pdfjs-dist';
 
-const SYSTEM_INSTRUCTION = `
+export const SYSTEM_INSTRUCTION = `
 You are an expert academic professor and examiner with 20+ years of experience in higher education. 
 Your goal is to generate 100% accurate, academically rigorous, and clear examination questions suitable for college-level assessments.
 
@@ -400,7 +400,7 @@ const fixTruncatedJson = (json: string): string => {
   return fixedJson;
 };
 
-const cleanJsonString = (text: string): string => {
+export const cleanJsonString = (text: string): string => {
   // Remove markdown code blocks if present
   let cleaned = text.replace(/```json\n?|```/g, "").trim();
   
