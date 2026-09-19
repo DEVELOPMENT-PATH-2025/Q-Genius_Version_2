@@ -122,6 +122,53 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Hugging Face Inference Providers proxy: keeps HF_TOKEN on the server so the
+  // browser can use open-source models without a personal token.
+  app.get("/api/hf/status", (req, res) => {
+    res.json({
+      configured: !!process.env.HF_TOKEN,
+      model: process.env.HF_MODEL || null
+    });
+  });
+
+  app.post("/api/hf/chat", async (req, res) => {
+    const HF_TOKEN = process.env.HF_TOKEN;
+
+    if (!HF_TOKEN) {
+      return res.status(501).json({
+        error: "Hugging Face is not configured. Set HF_TOKEN on the server or add a token in Settings."
+      });
+    }
+
+    try {
+      const { model, messages, max_tokens, temperature } = req.body || {};
+
+      if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: "messages is required" });
+      }
+
+      const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HF_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: model || process.env.HF_MODEL || "openai/gpt-oss-120b",
+          messages,
+          max_tokens: max_tokens ?? 8192,
+          temperature: temperature ?? 0.7
+        })
+      });
+
+      const text = await response.text();
+      res.status(response.status).type("application/json").send(text);
+    } catch (error: any) {
+      console.error("❌ Hugging Face proxy error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/send-welcome-email", async (req, res) => {
     const { email, firstName } = req.body;
     const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN;

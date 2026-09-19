@@ -27,7 +27,9 @@ import {
   Shield,
   Brain
 } from 'lucide-react';
-import { generateQuestionsFromPrompt, analyzeCurriculum, extractTextFromPDF, extractTextFromWord, extractTextFromExcel, isAIAvailable, addQuestionsToMemory, resetApiCallCounter, getApiCallCount, reinitializeAI, analyzePaperTemplate, extractQuestionsFromFile, getAIInstance } from '../services/geminiService';
+import { generateQuestionsFromPrompt, analyzeCurriculum, extractTextFromPDF, extractTextFromWord, extractTextFromExcel, isAIAvailable, addQuestionsToMemory, resetApiCallCounter, getApiCallCount, reinitializeAI, analyzePaperTemplate, extractQuestionsFromFile, getAIInstance } from '../services/aiService';
+import { AIProvider, DEFAULT_HF_MODEL, SUGGESTED_HF_MODELS, getAIProvider, getHuggingFaceModel, getHuggingFaceToken, setAIProvider, setHuggingFaceModel, setHuggingFaceToken } from '../services/aiProvider';
+import { probeHuggingFaceServerToken } from '../services/huggingFaceService';
 import { savePaperToDB, getPapersForFaculty, saveTemplate, getTemplates, deleteTemplate, deletePaper, subscribeToPapersForFaculty } from '../services/mockServices';
 import { exportToPDF, exportToDocx, exportToTxt } from '../services/exportService';
 import { SubmitPaperForm } from '../components/SubmitPaperForm';
@@ -183,6 +185,9 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
   const [activeTab, setActiveTab] = useState<'prompt' | 'upload' | 'curriculum' | 'settings'>('prompt');
   const [prompt, setPrompt] = useState('');
   const [customApiKey, setCustomApiKey] = useState(localStorage.getItem('CUSTOM_GEMINI_API_KEY') || '');
+  const [aiProvider, setAiProvider] = useState<AIProvider>(getAIProvider());
+  const [hfToken, setHfToken] = useState(getHuggingFaceToken());
+  const [hfModel, setHfModel] = useState(getHuggingFaceModel());
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -370,9 +375,12 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
     const storedApiKey = localStorage.getItem('CUSTOM_GEMINI_API_KEY');
     if (storedApiKey) {
       setCustomApiKey(storedApiKey);
-      setHasSelectedKey(true);
+    }
+
+    if (getAIProvider() === 'huggingface') {
+      probeHuggingFaceServerToken().finally(() => setHasSelectedKey(isAIAvailable()));
     } else {
-      setHasSelectedKey(false);
+      setHasSelectedKey(!!storedApiKey);
     }
   }, []);
 
@@ -472,6 +480,31 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
         </button>
       </motion.div>
     );
+  };
+
+  const handleProviderChange = (provider: AIProvider) => {
+    setAIProvider(provider);
+    setAiProvider(provider);
+    setError(null);
+
+    if (provider === 'huggingface') {
+      probeHuggingFaceServerToken().finally(() => setHasSelectedKey(isAIAvailable()));
+    } else {
+      setHasSelectedKey(isAIAvailable());
+    }
+  };
+
+  const handleSaveHuggingFaceSettings = () => {
+    setHuggingFaceToken(hfToken);
+    setHuggingFaceModel(hfModel);
+    setError(null);
+    setIsSaved(true);
+    setSaveMessage('Hugging Face settings saved.');
+
+    probeHuggingFaceServerToken().finally(() => {
+      setHasSelectedKey(isAIAvailable());
+      setTimeout(() => setIsSaved(false), 3000);
+    });
   };
 
   const handleSaveApiKey = () => {
@@ -582,7 +615,9 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
   const checkApiKey = () => {
     // Use the new safe AI availability check
     if (!isAIAvailable()) {
-      setError("Please add your Gemini API key in Settings to continue using AI features.");
+      setError(aiProvider === 'huggingface'
+        ? "Please add your Hugging Face token in Settings to continue using AI features."
+        : "Please add your Gemini API key in Settings to continue using AI features.");
       setHasSelectedKey(false);
       return false;
     }
@@ -2129,13 +2164,83 @@ const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ userId, userName, c
                     <Zap className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">Gemini API Configuration</h3>
-                    <p className="text-sm text-slate-500">Manually provide an API key to bypass quota limits.</p>
+                    <h3 className="text-xl font-bold text-slate-900">AI Provider Configuration</h3>
+                    <p className="text-sm text-slate-500">Use Google Gemini or an open-source model on Hugging Face.</p>
                   </div>
                 </div>
                 
                 <div className="space-y-6 max-w-2xl">
                   <div className="space-y-4">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                      <label className="text-sm font-bold text-slate-700">AI Provider</label>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <button
+                          onClick={() => handleProviderChange('gemini')}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            aiProvider === 'gemini'
+                              ? 'border-brand-500 bg-brand-50 text-brand-700'
+                              : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="block text-sm font-bold">Google Gemini</span>
+                          <span className="block text-xs">Supports document upload &amp; OCR</span>
+                        </button>
+                        <button
+                          onClick={() => handleProviderChange('huggingface')}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            aiProvider === 'huggingface'
+                              ? 'border-brand-500 bg-brand-50 text-brand-700'
+                              : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="block text-sm font-bold">Hugging Face (open source)</span>
+                          <span className="block text-xs">Text generation from prompts &amp; curriculum</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {aiProvider === 'huggingface' && (
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div>
+                          <label className="text-sm font-bold text-slate-700">Hugging Face Access Token</label>
+                          <input
+                            type="password"
+                            className="input-field mt-2"
+                            placeholder="hf_... (leave empty to use the server token)"
+                            value={hfToken}
+                            onChange={(e) => setHfToken(e.target.value)}
+                          />
+                          <p className="text-[10px] text-slate-400 font-medium mt-2">
+                            Create a fine-grained token with "Make calls to Inference Providers" at{' '}
+                            <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-brand-500 hover:underline font-bold">huggingface.co/settings/tokens</a>.
+                            If your deployment sets HF_TOKEN, you can leave this blank.
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-bold text-slate-700">Model</label>
+                          <input
+                            type="text"
+                            className="input-field mt-2"
+                            placeholder={DEFAULT_HF_MODEL}
+                            list="hf-model-suggestions"
+                            value={hfModel}
+                            onChange={(e) => setHfModel(e.target.value)}
+                          />
+                          <datalist id="hf-model-suggestions">
+                            {SUGGESTED_HF_MODELS.map((model) => (
+                              <option key={model} value={model} />
+                            ))}
+                          </datalist>
+                        </div>
+                        <button onClick={handleSaveHuggingFaceSettings} className="btn-primary w-full">
+                          Save Hugging Face Settings
+                        </button>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          Document upload (OCR) and template analysis still require the Gemini provider.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <label className="text-sm font-bold text-slate-700">Custom API Key</label>
